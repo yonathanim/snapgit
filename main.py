@@ -30,9 +30,10 @@ def read_file(filepath):
     with open(filepath, "rb") as f:
         return f.read()
 
-
 def get_hash(content):
-    return hashlib.sha1(content).hexdigest()
+    header = f"blob {len(content)}\0".encode()
+    full_data = header + content
+    return hashlib.sha1(full_data).hexdigest(), full_data
 
 
 def store_object(hash_value, content):
@@ -49,7 +50,6 @@ def update_index(filename, hash_value):
     with open(index_path, "a") as f:
         f.write(f"{filename} {hash_value}\n")
 
-
 def add_file(filename):
     if not os.path.exists(".snapgit"):
         print("Not a SnapGit repository.")
@@ -60,13 +60,12 @@ def add_file(filename):
         return
 
     content = read_file(filename)
-    hash_value = get_hash(content)
+    hash_value, full_data = get_hash(content)
 
-    store_object(hash_value, content)
+    store_object(hash_value, full_data)
     update_index(filename, hash_value)
 
     print(f"Added {filename}")
-
 
 # --------------------
 # CLI
