@@ -3,25 +3,32 @@ import sys
 import hashlib
 
 
-# --------------------
-# INIT
-# --------------------
-def init_repo():
-    repo_name = ".snapgit"
+def read_object(hash_value):
+    path = os.path.join(".snapgit", "objects", hash_value)
 
-    if os.path.exists(repo_name):
-        print("Repository already initialized.")
+    if not os.path.exists(path):
+        print("Object not found")
         return
 
-    os.mkdir(repo_name)
-    os.mkdir(os.path.join(repo_name, "objects"))
-    os.mkdir(os.path.join(repo_name, "refs"))
+    with open(path, "rb") as f:
+        data = f.read()
 
-    with open(os.path.join(repo_name, "HEAD"), "w") as f:
-        f.write("ref: refs/heads/main\n")
+    # Split header and content
+    header, content = data.split(b"\0", 1)
 
-    print("Initialized empty SnapGit repository.")
+    header = header.decode()
+    parts = header.split(" ", 1)
+    obj_type = parts[0]
+    size_str = parts[1] if len(parts) > 1 else str(len(content))
 
+    try:
+        content_str = content.decode()
+    except UnicodeDecodeError:
+        content_str = content.decode(errors="replace")
+
+    print(f"TYPE: {obj_type}")
+    print(f"SIZE: {size_str}")
+    print(f"CONTENT: {content_str}")
 
 # --------------------
 # ADD
@@ -68,9 +75,32 @@ def add_file(filename):
     print(f"Added {filename}")
 
 # --------------------
+# INIT
+# --------------------
+def init_repo():
+    repo_name = ".snapgit"
+
+    if os.path.exists(repo_name):
+        print("Repository already initialized.")
+        return
+
+    os.mkdir(repo_name)
+    os.mkdir(os.path.join(repo_name, "objects"))
+    os.mkdir(os.path.join(repo_name, "refs"))
+
+    with open(os.path.join(repo_name, "HEAD"), "w") as f:
+        f.write("ref: refs/heads/main\n")
+
+    print("Initialized empty SnapGit repository.")
+
+
+
+# --------------------
 # CLI
 # --------------------
 if __name__ == "__main__":
+    import sys
+
     if len(sys.argv) < 2:
         print("Please provide a command")
     else:
@@ -81,9 +111,15 @@ if __name__ == "__main__":
 
         elif command == "add":
             if len(sys.argv) < 3:
-                print("Provide a file name")
+                print("Provide a filename")
             else:
                 add_file(sys.argv[2])
+
+        elif command == "cat-file":
+            if len(sys.argv) < 3:
+                print("Provide a hash")
+            else:
+                read_object(sys.argv[2])
 
         else:
             print("Unknown command")
