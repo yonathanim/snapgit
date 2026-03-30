@@ -54,9 +54,30 @@ def store_object(hash_value, content):
 def update_index(filename, hash_value):
     index_path = os.path.join(".snapgit", "index")
 
-    with open(index_path, "a") as f:
-        f.write(f"{filename} {hash_value}\n")
+    entries = {}
 
+    # Step 1: Read existing entries
+    if os.path.exists(index_path):
+        with open(index_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split(maxsplit=1)
+                if len(parts) != 2:
+                    continue
+                name, h = parts
+                entries[name] = h
+
+    # Step 2: Update (overwrite)
+    entries[filename] = hash_value
+
+    # Step 3: Rewrite index file
+    with open(index_path, "w") as f:
+        for name in sorted(entries.keys()):
+            f.write(f"{name} {entries[name]}\n")
+
+            
 def add_file(filename):
     if not os.path.exists(".snapgit"):
         print("Not a SnapGit repository.")
