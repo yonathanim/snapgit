@@ -2,6 +2,48 @@ import os
 import sys
 import hashlib
 
+# --------------------
+# INIT
+# --------------------
+def init_repo():
+    repo_name = ".snapgit"
+
+    if os.path.exists(repo_name):
+        print("Repository already initialized.")
+        return
+
+    os.mkdir(repo_name)
+    os.mkdir(os.path.join(repo_name, "objects"))
+    os.mkdir(os.path.join(repo_name, "refs"))
+
+    with open(os.path.join(repo_name, "HEAD"), "w") as f:
+        f.write("ref: refs/heads/main\n")
+
+    print("Initialized empty SnapGit repository.")
+
+   
+# --------------------
+# ADD
+# --------------------         
+def add_file(filename):
+    if not os.path.exists(".snapgit"):
+        print("Not a SnapGit repository.")
+        return
+
+    if not os.path.exists(filename):
+        print("File does not exist.")
+        return
+
+    content = read_file(filename)
+    hash_value, full_data = get_hash(content)
+
+    store_object(hash_value, full_data)
+    update_index(filename, hash_value)
+
+    print(f"Added {filename}")
+
+
+
 
 def read_object(hash_value):
     path = os.path.join(".snapgit", "objects", hash_value)
@@ -30,9 +72,6 @@ def read_object(hash_value):
     print(f"SIZE: {size_str}")
     print(f"CONTENT: {content_str}")
 
-# --------------------
-# ADD
-# --------------------
 def read_file(filepath):
     with open(filepath, "rb") as f:
         return f.read()
@@ -77,45 +116,73 @@ def update_index(filename, hash_value):
         for name in sorted(entries.keys()):
             f.write(f"{name} {entries[name]}\n")
 
-            
-def add_file(filename):
-    if not os.path.exists(".snapgit"):
-        print("Not a SnapGit repository.")
+
+
+def create_commit(message):
+    repo = ".snapgit"
+
+    index_entries = read_index()
+
+    if not index_entries:
+        print("Nothing to commit.")
         return
 
-    if not os.path.exists(filename):
-        print("File does not exist.")
-        return
+    parent = get_current_commit()
 
-    content = read_file(filename)
-    hash_value, full_data = get_hash(content)
+    content = ""
 
-    store_object(hash_value, full_data)
-    update_index(filename, hash_value)
+    if parent:
+        content += f"parent {parent}\n"
 
-    print(f"Added {filename}")
+    content += f"message {message}\n"
 
-# --------------------
-# INIT
-# --------------------
-def init_repo():
-    repo_name = ".snapgit"
+    for entry in index_entries:
+        content += entry
 
-    if os.path.exists(repo_name):
-        print("Repository already initialized.")
-        return
+    content_bytes = content.encode()
 
-    os.mkdir(repo_name)
-    os.mkdir(os.path.join(repo_name, "objects"))
-    os.mkdir(os.path.join(repo_name, "refs"))
+    header = f"commit {len(content_bytes)}\0".encode()
+    full_data = header + content_bytes
 
-    with open(os.path.join(repo_name, "HEAD"), "w") as f:
-        f.write("ref: refs/heads/main\n")
+    commit_hash = hashlib.sha1(full_data).hexdigest()
 
-    print("Initialized empty SnapGit repository.")
+    store_object(commit_hash, full_data)
+
+    ref_path = os.path.join(repo, get_head_ref())
+    os.makedirs(os.path.dirname(ref_path), exist_ok=True)
+
+    with open(ref_path, "w") as f:
+        f.write(commit_hash)
+
+    # clear index after commit
+    open(os.path.join(repo, "index"), "w").close()
+
+    print(f"Committed: {commit_hash}")
+
+def get_head_ref():
+    with open(os.path.join(".snapgit", "HEAD"), "r") as f:
+        ref = f.read().strip()
+    return ref.split(" ")[1]
 
 
+def get_current_commit():
+    ref_path = os.path.join(".snapgit", get_head_ref())
 
+    if os.path.exists(ref_path):
+        with open(ref_path, "r") as f:
+            return f.read().strip()
+
+    return None
+
+
+def read_index():
+    index_path = os.path.join(".snapgit", "index")
+
+    if not os.path.exists(index_path):
+        return []
+
+    with open(index_path, "r") as f:
+        return f.readlines()
 # --------------------
 # CLI
 # --------------------
@@ -141,6 +208,12 @@ if __name__ == "__main__":
                 print("Provide a hash")
             else:
                 read_object(sys.argv[2])
+
+        elif command == "commit":
+            if len(sys.argv) < 3:
+                print("Provide a commit message")
+            else:
+                create_commit(sys.argv[2])
 
         else:
             print("Unknown command")
