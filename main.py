@@ -219,6 +219,44 @@ def log_commits():
 
         commit_hash = parent
 
+def checkout_commit(commit_hash):
+    path = os.path.join(".snapgit", "objects", commit_hash)
+
+    if not os.path.exists(path):
+        print("Commit not found")
+        return
+
+    with open(path, "rb") as f:
+        data = f.read()
+
+    header, content = data.split(b"\0", 1)
+    content_str = content.decode(errors="replace")
+
+    for line in content_str.split("\n"):
+        if line.startswith("message ") or line.startswith("parent "):
+            continue
+
+        if not line.strip():
+            continue
+
+        filename, blob_hash = line.split(" ", 1)
+
+        blob_path = os.path.join(".snapgit", "objects", blob_hash)
+
+        if not os.path.exists(blob_path):
+            print(f"Missing object {blob_hash}")
+            continue
+
+        with open(blob_path, "rb") as bf:
+            blob_data = bf.read()
+
+        _, file_content = blob_data.split(b"\0", 1)
+
+        with open(filename, "wb") as f:
+            f.write(file_content)
+
+        print(f"Restored {filename}")
+
 # --------------------
 # CLI
 # --------------------
@@ -250,8 +288,14 @@ if __name__ == "__main__":
                 print("Provide a commit message")
             else:
                 create_commit(sys.argv[2])
+        elif command == "checkout":
+            if len(sys.argv) < 3:
+              print("Provide a commit hash")
+            else:
+               checkout_commit(sys.argv[2])
         elif command == "log":        
             log_commits()                           
 
         else:
             print("Unknown command")
+        
