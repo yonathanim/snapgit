@@ -183,6 +183,42 @@ def read_index():
 
     with open(index_path, "r") as f:
         return f.readlines()
+
+
+def log_commits():
+    commit_hash = get_current_commit()
+
+    if not commit_hash:
+        print("No commits yet.")
+        return
+
+    while commit_hash:
+        path = os.path.join(".snapgit", "objects", commit_hash)
+
+        if not os.path.exists(path):
+            print("Broken commit chain.")
+            return
+
+        with open(path, "rb") as f:
+            data = f.read()
+
+        header, content = data.split(b"\0", 1)
+        content_str = content.decode(errors="replace")
+
+        print(f"commit {commit_hash}")
+
+        parent = None
+
+        for line in content_str.split("\n"):
+            if line.startswith("parent "):
+                parent = line.split(" ", 1)[1]
+            elif line.startswith("message "):
+                print(f"message {line.split(' ', 1)[1]}")
+
+        print()
+
+        commit_hash = parent
+
 # --------------------
 # CLI
 # --------------------
@@ -214,6 +250,8 @@ if __name__ == "__main__":
                 print("Provide a commit message")
             else:
                 create_commit(sys.argv[2])
+        elif command == "log":        
+            log_commits()                           
 
         else:
             print("Unknown command")
