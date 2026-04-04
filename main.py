@@ -219,43 +219,47 @@ def log_commits():
 
         commit_hash = parent
 
-def checkout_commit(commit_hash):
-    path = os.path.join(".snapgit", "objects", commit_hash)
+def checkout(name):
+    # Check if it's a branch
+    branch_path = os.path.join(".snapgit", "refs", "heads", name)
 
-    if not os.path.exists(path):
-        print("Commit not found")
+    if os.path.exists(branch_path):
+        # Switch HEAD to branch
+        with open(os.path.join(".snapgit", "HEAD"), "w") as f:
+            f.write(f"ref: refs/heads/{name}\n")
+
+        with open(branch_path, "r") as f:
+            commit_hash = f.read().strip()
+
+        print(f"Switched to branch '{name}'")
+
+    else:
+        # Treat as commit hash
+        commit_hash = name
+        print(f"Detached HEAD at {commit_hash}")
+
+    # Restore files (reuse logic)
+    checkout_commit(commit_hash)
+
+def create_branch(name):
+    branch_path = os.path.join(".snapgit", "refs", "heads", name)
+
+    if os.path.exists(branch_path):
+        print("Branch already exists")
         return
 
-    with open(path, "rb") as f:
-        data = f.read()
+    current_commit = get_current_commit()
 
-    header, content = data.split(b"\0", 1)
-    content_str = content.decode(errors="replace")
+    if not current_commit:
+        print("No commits to branch from")
+        return
 
-    for line in content_str.split("\n"):
-        if line.startswith("message ") or line.startswith("parent "):
-            continue
+    os.makedirs(os.path.dirname(branch_path), exist_ok=True)
 
-        if not line.strip():
-            continue
+    with open(branch_path, "w") as f:
+        f.write(current_commit)
 
-        filename, blob_hash = line.split(" ", 1)
-
-        blob_path = os.path.join(".snapgit", "objects", blob_hash)
-
-        if not os.path.exists(blob_path):
-            print(f"Missing object {blob_hash}")
-            continue
-
-        with open(blob_path, "rb") as bf:
-            blob_data = bf.read()
-
-        _, file_content = blob_data.split(b"\0", 1)
-
-        with open(filename, "wb") as f:
-            f.write(file_content)
-
-        print(f"Restored {filename}")
+    print(f"Branch '{name}' created at {current_commit}")
 
 # --------------------
 # CLI
@@ -290,12 +294,16 @@ if __name__ == "__main__":
                 create_commit(sys.argv[2])
         elif command == "checkout":
             if len(sys.argv) < 3:
-              print("Provide a commit hash")
+                print("Provide a name")
             else:
-               checkout_commit(sys.argv[2])
+                checkout(sys.argv[2])
+        elif command == "branch":
+            if len(sys.argv) < 3:
+                print("Provide a branch name")
+            else:
+                create_branch(sys.argv[2])
         elif command == "log":        
             log_commits()                           
-
         else:
             print("Unknown command")
         
