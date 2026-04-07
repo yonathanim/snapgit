@@ -283,6 +283,21 @@ def merge_branch(name):
     with open(path, "rb") as f:
         data = f.read()
 
+def show_status():
+    print("On branch", get_head_ref().split("/")[-1])
+    print()
+
+    index_entries = read_index()
+
+    if not index_entries:
+        print("No files staged")
+        return
+
+    print("Staged files:")
+    for entry in index_entries:
+        filename = entry.split(" ")[0]
+        print(f"- {filename}")
+
 # --------------------
 # CLI
 # --------------------
@@ -328,7 +343,9 @@ if __name__ == "__main__":
             if len(sys.argv) < 3:
                 print("Provide branch name")
             else:
-                merge_branch(sys.argv[2])        
+                merge_branch(sys.argv[2])  
+        elif command == "status":
+            show_status()      
         elif command == "log":        
             log_commits()                           
         else:
