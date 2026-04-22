@@ -302,51 +302,6 @@ def show_status():
 # CLI
 # --------------------
 if __name__ == "__main__":
-    import sys
+    from snapgit.cli import main
 
-    if len(sys.argv) < 2:
-        print("Please provide a command")
-    else:
-        command = sys.argv[1]
-
-        if command == "init":
-            init_repo()
-
-        elif command == "add":
-            if len(sys.argv) < 3:
-                print("Provide a filename")
-            else:
-                add_file(sys.argv[2])
-
-        elif command == "cat-file":
-            if len(sys.argv) < 3:
-                print("Provide a hash")
-            else:
-                read_object(sys.argv[2])
-
-        elif command == "commit":
-            if len(sys.argv) < 3:
-                print("Provide a commit message")
-            else:
-                create_commit(sys.argv[2])
-        elif command == "checkout":
-            if len(sys.argv) < 3:
-                print("Provide a name")
-            else:
-                checkout(sys.argv[2])
-        elif command == "branch":
-            if len(sys.argv) < 3:
-                print("Provide a branch name")
-            else:
-                create_branch(sys.argv[2])
-        elif command == "merge":
-            if len(sys.argv) < 3:
-                print("Provide branch name")
-            else:
-                merge_branch(sys.argv[2])  
-        elif command == "status":
-            show_status()      
-        elif command == "log":        
-            log_commits()                           
-        else:
-            print("Unknown command")
+    main()
