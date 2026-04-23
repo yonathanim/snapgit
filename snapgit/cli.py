@@ -56,6 +56,8 @@ def main(argv=None):
         show_status()
     elif command == "log":
         log_commits()
+    elif command == "version":
+        print("SnapGit version 0.1.0")
     else:
         print("Unknown command")
 
