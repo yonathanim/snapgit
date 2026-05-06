@@ -1,45 +1,49 @@
+"""Create a commit in the SnapGit repository."""
+
 import os
-import hashlib
-from ..utils import read_index, get_current_commit, store_object, get_head_ref
+from ..utils import read_index, get_current_commit, get_head_ref
+from ..objects import create_commit as create_commit_object
 
 
-def create_commit(message):
+def create_commit(message: str) -> None:
+    """
+    Create a commit from staged files.
+    
+    Process:
+    1. Verify there are staged files (index not empty)
+    2. Get parent commit (if any)
+    3. Build tree data from index
+    4. Create commit object via ObjectStore
+    5. Update HEAD reference
+    6. Clear index
+    
+    Args:
+        message: Commit message
+    """
     repo = ".snapgit"
-
+    
     index_entries = read_index()
-
+    
     if not index_entries:
         print("Nothing to commit.")
         return
-
+    
     parent = get_current_commit()
-
-    content = ""
-
-    if parent:
-        content += f"parent {parent}\n"
-
-    content += f"message {message}\n"
-
-    for entry in index_entries:
-        content += entry
-
-    content_bytes = content.encode()
-
-    header = f"commit {len(content_bytes)}\0".encode()
-    full_data = header + content_bytes
-
-    commit_hash = hashlib.sha1(full_data).hexdigest()
-
-    store_object(commit_hash, full_data)
-
+    
+    # Build tree data from index entries
+    tree_data = "".join(index_entries)
+    
+    # Create commit object (ObjectStore handles hashing and storage)
+    commit_hash = create_commit_object(message, parent, tree_data)
+    
+    # Update HEAD reference to point to new commit
     ref_path = os.path.join(repo, get_head_ref())
     os.makedirs(os.path.dirname(ref_path), exist_ok=True)
-
+    
     with open(ref_path, "w") as f:
         f.write(commit_hash)
-
-    # clear index after commit
+    
+    # Clear index after successful commit
     open(os.path.join(repo, "index"), "w").close()
-
+    
     print(f"Committed: {commit_hash}")

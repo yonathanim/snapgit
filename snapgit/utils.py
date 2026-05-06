@@ -1,23 +1,18 @@
-import os
-import hashlib
+"""
+SnapGit utilities for repository operations.
 
-def read_file(filepath):
+High-level repo operations: index management, refs, HEAD tracking.
+Low-level object storage is now in objects.py.
+"""
+
+import os
+from typing import Dict, List, Optional
+
+
+def read_file(filepath: str) -> bytes:
+    """Read file contents as bytes."""
     with open(filepath, "rb") as f:
         return f.read()
-
-
-def get_hash(content):
-    header = f"blob {len(content)}\0".encode()
-    full_data = header + content
-    return hashlib.sha1(full_data).hexdigest(), full_data
-
-
-def store_object(hash_value, content):
-    path = os.path.join(".snapgit", "objects", hash_value)
-
-    if not os.path.exists(path): 
-        with open(path, "wb") as f:
-            f.write(content)
 
 
 def update_index(filename, hash_value):
@@ -70,34 +65,37 @@ def get_current_commit():
     return None
 
 
-def read_object(hash_value):
-    path = os.path.join(".snapgit", "objects", hash_value)
-
-    if not os.path.exists(path):
-        print("Object not found")
-        return
-
-    with open(path, "rb") as f:
-        data = f.read()
-
-    header, content = data.split(b"\0", 1)
-
-    header = header.decode()
-    parts = header.split(" ", 1)
-    obj_type = parts[0]
-    size_str = parts[1] if len(parts) > 1 else str(len(content))
-
+def read_object(hash_value: str) -> None:
+    """
+    Display an object's type, size, and content.
+    Uses the ObjectStore for proper object reading.
+    """
+    from .objects import ObjectStore
+    
     try:
-        content_str = content.decode()
-    except UnicodeDecodeError:
-        content_str = content.decode(errors="replace")
+        obj_type, content = ObjectStore.read_object(hash_value)
+        
+        print(f"TYPE: {obj_type}")
+        print(f"SIZE: {len(content)}")
+        
+        # Try to decode as text; fallback to repr
+        try:
+            content_str = content.decode("utf-8")
+        except UnicodeDecodeError:
+            content_str = content.decode("utf-8", errors="replace")
+        
+        print(f"CONTENT: {content_str}")
+        
+    except FileNotFoundError:
+        print("Object not found")
+    except ValueError as e:
+        print(f"Error reading object: {e}")
 
-    print(f"TYPE: {obj_type}")
-    print(f"SIZE: {size_str}")
-    print(f"CONTENT: {content_str}")
 
-
-def log_commits():
+def log_commits() -> None:
+    """Display commit history using the ObjectStore."""
+    from .objects import ObjectStore
+    
     commit_hash = get_current_commit()
 
     if not commit_hash:
@@ -105,30 +103,29 @@ def log_commits():
         return
 
     while commit_hash:
-        path = os.path.join(".snapgit", "objects", commit_hash)
-
-        if not os.path.exists(path):
+        try:
+            obj_type, content = ObjectStore.read_object(commit_hash)
+        except FileNotFoundError:
             print("Broken commit chain.")
             return
-
-        with open(path, "rb") as f:
-            data = f.read()
-
-        header, content = data.split(b"\0", 1)
+        except ValueError as e:
+            print(f"Error reading commit: {e}")
+            return
+        
         content_str = content.decode(errors="replace")
-
+        
         print(f"commit {commit_hash}")
-
+        
         parent = None
-
+        
         for line in content_str.split("\n"):
             if line.startswith("parent "):
                 parent = line.split(" ", 1)[1]
             elif line.startswith("message "):
                 print(f"message {line.split(' ', 1)[1]}")
-
+        
         print()
-
+        
         commit_hash = parent
 
 
