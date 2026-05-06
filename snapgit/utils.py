@@ -15,7 +15,7 @@ def get_hash(content):
 def store_object(hash_value, content):
     path = os.path.join(".snapgit", "objects", hash_value)
 
-    if not os.path.exists(path):
+    if not os.path.exists(path): 
         with open(path, "wb") as f:
             f.write(content)
 

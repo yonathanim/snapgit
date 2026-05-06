@@ -60,7 +60,3 @@ def main(argv=None):
         print("SnapGit version 0.1.0")
     else:
         print("Unknown command")
-
-
-if __name__ == "__main__":
-    main()
