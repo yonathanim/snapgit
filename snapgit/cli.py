@@ -3,7 +3,9 @@ from .commands.init_repo import init_repo
 from .commands.add_file import add_file
 from .commands.commit import create_commit
 from .commands.checkout import checkout
-from .commands.branch import create_branch, merge_branch
+from .commands.branch import create_branch
+from .commands.merge import merge
+from .commands.diff import diff
 from .utils import read_object, show_status, log_commits
 
 
@@ -51,7 +53,20 @@ def main(argv=None):
         if len(argv) < 3:
             print("Provide branch name")
         else:
-            merge_branch(argv[2])
+            try:
+                merge(argv[2])
+            except Exception as e:
+                print(f"Error: {e}")
+    elif command == "diff":
+        try:
+            if len(argv) == 3:
+                diff(argv[2])
+            elif len(argv) == 4:
+                diff(argv[2], argv[3])
+            else:
+                print("Usage: snapgit diff <commit1> [<commit2>]")
+        except Exception as e:
+            print(f"Error: {e}")
     elif command == "status":
         show_status()
     elif command == "log":

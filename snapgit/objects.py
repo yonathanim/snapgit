@@ -178,13 +178,15 @@ def create_blob(file_content: bytes) -> str:
     return ObjectStore.write_object("blob", file_content)
 
 
-def create_commit(message: str, parent: Optional[str], tree_data: str,
-                 author: str = "SnapGit User", date: Optional[str] = None) -> str:
+def create_commit(message: str, parent: Optional[str] = None, tree_data: str = "",
+                 author: str = "SnapGit User", date: Optional[str] = None,
+                 parents: Optional[list] = None) -> str:
     """
     Create a commit object with metadata.
     
     Commit format (similar to Git):
         parent <hash>
+        [parent <hash2>]  # For merge commits
         author <name>
         date <timestamp>
         message <msg>
@@ -192,7 +194,8 @@ def create_commit(message: str, parent: Optional[str], tree_data: str,
     
     Args:
         message: Commit message
-        parent: Parent commit hash (None for first commit)
+        parent: Single parent commit hash (backward compatible, None for first commit)
+        parents: List of parent commit hashes (for merge commits, takes precedence over parent)
         tree_data: Tree/index data (file entries)
         author: Author name (default: "SnapGit User")
         date: Unix timestamp as string (default: current time)
@@ -205,8 +208,13 @@ def create_commit(message: str, parent: Optional[str], tree_data: str,
     
     content_parts = []
     
-    if parent:
-        content_parts.append(f"parent {parent}")
+    # Handle parents (prefer list over single)
+    parent_list = parents if parents is not None else (
+        [parent] if parent else []
+    )
+    
+    for p in parent_list:
+        content_parts.append(f"parent {p}")
     
     content_parts.append(f"author {author}")
     content_parts.append(f"date {date}")
