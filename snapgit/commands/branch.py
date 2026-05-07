@@ -1,46 +1,75 @@
-import os
-from ..utils import get_current_commit
+"""Manage branches in SnapGit."""
+
+from ..refs import RefManager
 
 
-def create_branch(name):
-    branch_path = os.path.join(".snapgit", "refs", "heads", name)
-
-    if os.path.exists(branch_path):
-        print("Branch already exists")
-        return
-
-    current_commit = get_current_commit()
-
+def create_branch(name: str) -> None:
+    """
+    Create a new branch.
+    
+    Branch points to the current commit and can be switched to later.
+    
+    Args:
+        name: Branch name
+    """
+    current_commit = RefManager.get_current_commit()
+    
     if not current_commit:
         print("No commits to branch from")
         return
+    
+    try:
+        RefManager.create_branch(name, current_commit)
+        print(f"Branch '{name}' created at {current_commit[:12]}")
+    except ValueError as e:
+        print(f"Error: {e}")
 
-    os.makedirs(os.path.dirname(branch_path), exist_ok=True)
 
-    with open(branch_path, "w") as f:
-        f.write(current_commit)
+def delete_branch(name: str) -> None:
+    """
+    Delete a branch.
+    
+    Cannot delete the currently checked-out branch.
+    
+    Args:
+        name: Branch name
+    """
+    try:
+        RefManager.delete_branch(name)
+        print(f"Deleted branch '{name}'")
+    except ValueError as e:
+        print(f"Error: {e}")
 
-    print(f"Branch '{name}' created at {current_commit}")
+
+def list_branches() -> None:
+    """List all branches, marking current branch with *."""
+    current_branch = RefManager.get_current_branch()
+    branches = RefManager.list_branches()
+    
+    for branch in branches:
+        marker = "* " if branch == current_branch else "  "
+        print(f"{marker}{branch}")
 
 
-def merge_branch(name):
-    branch_path = os.path.join(".snapgit", "refs", "heads", name)
-
-    if not os.path.exists(branch_path):
-        print("Branch not found")
+def merge_branch(name: str) -> None:
+    """
+    Merge a branch into the current branch (placeholder).
+    
+    Full merge implementation deferred to Phase 4.
+    
+    Args:
+        name: Branch to merge
+    """
+    branch_commit = RefManager.get_branch_commit(name)
+    current_commit = RefManager.get_current_commit()
+    
+    if not branch_commit:
+        print(f"Branch '{name}' not found")
         return
-
-    current_commit = get_current_commit()
-
-    with open(branch_path, "r") as f:
-        other_commit = f.read().strip()
-
-    if current_commit == other_commit:
+    
+    if branch_commit == current_commit:
         print("Already up to date")
         return
-
-    # Read other commit files (simple strategy: take their version)
-    path = os.path.join(".snapgit", "objects", other_commit)
-
-    with open(path, "rb") as f:
-        data = f.read()
+    
+    print(f"Merge of '{name}' (Phase 3 placeholder)")
+    print("Full merge support coming in Phase 4")

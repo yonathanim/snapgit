@@ -18,6 +18,7 @@ This design enables:
 
 import os
 import hashlib
+import time
 from typing import Tuple, Optional
 
 
@@ -177,23 +178,38 @@ def create_blob(file_content: bytes) -> str:
     return ObjectStore.write_object("blob", file_content)
 
 
-def create_commit(message: str, parent: Optional[str], tree_data: str) -> str:
+def create_commit(message: str, parent: Optional[str], tree_data: str,
+                 author: str = "SnapGit User", date: Optional[str] = None) -> str:
     """
-    Create a commit object.
+    Create a commit object with metadata.
+    
+    Commit format (similar to Git):
+        parent <hash>
+        author <name>
+        date <timestamp>
+        message <msg>
+        <tree-data>
     
     Args:
         message: Commit message
         parent: Parent commit hash (None for first commit)
         tree_data: Tree/index data (file entries)
+        author: Author name (default: "SnapGit User")
+        date: Unix timestamp as string (default: current time)
         
     Returns:
         SHA1 hash of the commit
     """
+    if date is None:
+        date = str(int(time.time()))
+    
     content_parts = []
     
     if parent:
         content_parts.append(f"parent {parent}")
     
+    content_parts.append(f"author {author}")
+    content_parts.append(f"date {date}")
     content_parts.append(f"message {message}")
     content_parts.append(tree_data)
     

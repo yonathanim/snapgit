@@ -1,11 +1,12 @@
 """Create a commit in the SnapGit repository."""
 
 import os
-from ..utils import read_index, get_current_commit, get_head_ref
+from ..utils import read_index
+from ..refs import RefManager
 from ..objects import create_commit as create_commit_object
 
 
-def create_commit(message: str) -> None:
+def create_commit(message: str, author: str = "SnapGit User") -> None:
     """
     Create a commit from staged files.
     
@@ -13,12 +14,13 @@ def create_commit(message: str) -> None:
     1. Verify there are staged files (index not empty)
     2. Get parent commit (if any)
     3. Build tree data from index
-    4. Create commit object via ObjectStore
-    5. Update HEAD reference
+    4. Create commit object via ObjectStore (with author/date metadata)
+    5. Update current branch pointer
     6. Clear index
     
     Args:
         message: Commit message
+        author: Author name (default: "SnapGit User")
     """
     repo = ".snapgit"
     
@@ -28,20 +30,22 @@ def create_commit(message: str) -> None:
         print("Nothing to commit.")
         return
     
-    parent = get_current_commit()
+    # Get current commit (if any)
+    parent = RefManager.get_current_commit()
     
     # Build tree data from index entries
     tree_data = "".join(index_entries)
     
-    # Create commit object (ObjectStore handles hashing and storage)
-    commit_hash = create_commit_object(message, parent, tree_data)
+    # Create commit object (includes author, date metadata)
+    commit_hash = create_commit_object(message, parent, tree_data, author=author)
     
-    # Update HEAD reference to point to new commit
-    ref_path = os.path.join(repo, get_head_ref())
-    os.makedirs(os.path.dirname(ref_path), exist_ok=True)
-    
-    with open(ref_path, "w") as f:
-        f.write(commit_hash)
+    # Update current branch to point to new commit
+    current_branch = RefManager.get_current_branch()
+    if current_branch:
+        RefManager.update_branch(current_branch, commit_hash)
+    else:
+        # Detached HEAD - update HEAD directly
+        RefManager.set_head_detached(commit_hash)
     
     # Clear index after successful commit
     open(os.path.join(repo, "index"), "w").close()

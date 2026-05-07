@@ -1,25 +1,24 @@
-import os
-from ..utils import get_head_ref
+"""Check out commits or branches in SnapGit."""
+
+from ..refs import RefManager
 
 
-def checkout(name):
+def checkout(name: str) -> None:
+    """
+    Checkout a branch or commit.
+    
+    - If name is a branch: switch to that branch
+    - If name is a commit hash: enter detached HEAD state
+    
+    Args:
+        name: Branch name or commit hash
+    """
     # Check if it's a branch
-    branch_path = os.path.join(".snapgit", "refs", "heads", name)
-
-    if os.path.exists(branch_path):
-        # Switch HEAD to branch
-        with open(os.path.join(".snapgit", "HEAD"), "w") as f:
-            f.write(f"ref: refs/heads/{name}\n")
-
-        with open(branch_path, "r") as f:
-            commit_hash = f.read().strip()
-
-        print(f"Switched to branch '{name}'")
-
+    if RefManager.branch_exists(name):
+        RefManager.set_head_to_branch(name)
+        commit = RefManager.get_branch_commit(name)
+        print(f"Switched to branch '{name}' (commit {commit[:12]})")
     else:
-        # Treat as commit hash
-        commit_hash = name
-        print(f"Detached HEAD at {commit_hash}")
-
-    # Restore files (reuse logic)
-    checkout_commit(commit_hash)
+        # Treat as commit hash (detached HEAD)
+        RefManager.set_head_detached(name)
+        print(f"Detached HEAD at {name[:12]}")

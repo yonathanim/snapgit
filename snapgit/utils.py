@@ -50,19 +50,31 @@ def read_index():
 
 
 def get_head_ref():
-    with open(os.path.join(".snapgit", "HEAD"), "r") as f:
-        ref = f.read().strip()
-    return ref.split(" ")[1]
+    """
+    Get HEAD reference path (for compatibility).
+    
+    DEPRECATED: Use RefManager.get_head_ref() or RefManager.resolve_head()
+    Returns: Branch path like "refs/heads/main"
+    """
+    from .refs import RefManager
+    head_content = RefManager.get_head_ref()
+    
+    # If symbolic ref, extract the path
+    if head_content.startswith("ref: "):
+        return head_content[5:]
+    
+    # Fallback for detached state
+    return "HEAD"
 
 
 def get_current_commit():
-    ref_path = os.path.join(".snapgit", get_head_ref())
-
-    if os.path.exists(ref_path):
-        with open(ref_path, "r") as f:
-            return f.read().strip()
-
-    return None
+    """
+    Get current commit hash.
+    
+    DEPRECATED: Use RefManager.get_current_commit()
+    """
+    from .refs import RefManager
+    return RefManager.get_current_commit()
 
 
 def read_object(hash_value: str) -> None:
@@ -93,52 +105,42 @@ def read_object(hash_value: str) -> None:
 
 
 def log_commits() -> None:
-    """Display commit history using the ObjectStore."""
-    from .objects import ObjectStore
+    """
+    Display commit history using CommitGraph.
     
-    commit_hash = get_current_commit()
-
-    if not commit_hash:
-        print("No commits yet.")
-        return
-
-    while commit_hash:
-        try:
-            obj_type, content = ObjectStore.read_object(commit_hash)
-        except FileNotFoundError:
-            print("Broken commit chain.")
-            return
-        except ValueError as e:
-            print(f"Error reading commit: {e}")
-            return
-        
-        content_str = content.decode(errors="replace")
-        
-        print(f"commit {commit_hash}")
-        
-        parent = None
-        
-        for line in content_str.split("\n"):
-            if line.startswith("parent "):
-                parent = line.split(" ", 1)[1]
-            elif line.startswith("message "):
-                print(f"message {line.split(' ', 1)[1]}")
-        
-        print()
-        
-        commit_hash = parent
+    Shows full commit graph with proper formatting.
+    """
+    from .graph import CommitGraph
+    
+    output = CommitGraph.format_log()
+    print(output)
 
 
 def show_status():
-    print("On branch", get_head_ref().split("/")[-1])
+    """
+    Show repository status.
+    
+    Displays:
+    - Current branch (or detached state)
+    - Staged files
+    """
+    from .refs import RefManager
+    
+    commit, branch = RefManager.resolve_head()
+    
+    if branch:
+        print(f"On branch {branch}")
+    else:
+        print(f"HEAD detached at {commit[:12] if commit else 'none'}")
+    
     print()
-
+    
     index_entries = read_index()
-
+    
     if not index_entries:
         print("No files staged")
         return
-
+    
     print("Staged files:")
     for entry in index_entries:
         filename = entry.split(" ")[0]
