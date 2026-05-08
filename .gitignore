@@ -1,4 +1,18 @@
-.snapgit/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Virtual environment
+.venv/
+
+# Packaging
+*.egg-info/
+
+# SnapGit internal repo
+.snapgit/
+
+*.egg-info/
+
+.pytest_cache/
+
+.coverage
