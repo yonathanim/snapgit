@@ -242,3 +242,4 @@ def read_object_safe(hash_value: str) -> Optional[Tuple[str, bytes]]:
     except (FileNotFoundError, ValueError) as e:
         print(f"Error reading object {hash_value}: {e}")
         return None
+
