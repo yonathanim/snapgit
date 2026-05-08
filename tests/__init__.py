@@ -1,0 +1,1 @@
+"""SnapGit test package."""
