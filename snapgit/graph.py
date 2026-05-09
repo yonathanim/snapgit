@@ -1,5 +1,4 @@
-"""
-SnapGit Commit Graph.
+"""SnapGit Commit Graph.
 
 High-level commit history traversal and analysis.
 
