@@ -11,8 +11,7 @@ __pycache__/
 # SnapGit internal repo
 .snapgit/
 
-*.egg-info/
-
 .pytest_cache/
 
 .coverage
+
