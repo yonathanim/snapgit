@@ -9,69 +9,195 @@ from .commands.diff import diff
 from .utils import read_object, show_status, log_commits
 
 
+# Command help text
+COMMANDS_HELP = {
+    "init": {
+        "usage": "snapgit init",
+        "description": "Initialize a new SnapGit repository in the current directory.",
+        "example": "snapgit init"
+    },
+    "add": {
+        "usage": "snapgit add <filename>",
+        "description": "Stage a file for commit.",
+        "example": "snapgit add file.txt"
+    },
+    "commit": {
+        "usage": "snapgit commit <message>",
+        "description": "Create a new commit with staged files.",
+        "example": "snapgit commit 'Initial commit'"
+    },
+    "checkout": {
+        "usage": "snapgit checkout <branch|commit>",
+        "description": "Switch to a branch or checkout a commit (detached HEAD).",
+        "example": "snapgit checkout main"
+    },
+    "branch": {
+        "usage": "snapgit branch <name>",
+        "description": "Create a new branch from the current commit.",
+        "example": "snapgit branch feature"
+    },
+    "merge": {
+        "usage": "snapgit merge <branch>",
+        "description": "Merge a branch into the current branch.",
+        "example": "snapgit merge feature"
+    },
+    "diff": {
+        "usage": "snapgit diff [<commit1>] [<commit2>]",
+        "description": "Show differences between commits.",
+        "example": "snapgit diff main feature"
+    },
+    "log": {
+        "usage": "snapgit log",
+        "description": "Display commit history.",
+        "example": "snapgit log"
+    },
+    "status": {
+        "usage": "snapgit status",
+        "description": "Show the working tree status.",
+        "example": "snapgit status"
+    },
+    "cat-file": {
+        "usage": "snapgit cat-file <hash>",
+        "description": "Display object contents by hash.",
+        "example": "snapgit cat-file abc123def456..."
+    },
+}
+
+GLOBAL_HELP = """SnapGit - A Git-like Version Control System
+
+Usage:
+  snapgit <command> [options]
+  snapgit --help
+  snapgit --version
+
+Available commands:
+  init        Initialize a new repository
+  add         Stage files for commit
+  commit      Create a new commit
+  checkout    Switch branches or checkout commits
+  branch      Create or list branches
+  merge       Merge branches
+  diff        Show differences between commits
+  log         Display commit history
+  status      Show working tree status
+  cat-file    Display object contents
+  
+For help on a command, run: snapgit <command> --help
+"""
+
+
+def print_help(command=None):
+    """Print help for a command or global help."""
+    if command is None:
+        print(GLOBAL_HELP)
+        return
+    
+    if command in COMMANDS_HELP:
+        info = COMMANDS_HELP[command]
+        print(f"Usage: {info['usage']}")
+        print(f"\n{info['description']}")
+        print(f"\nExample: {info['example']}")
+    else:
+        print(f"Unknown command: {command}")
+        sys.exit(2)
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
     if len(argv) < 2:
-        print("Please provide a command")
-        return
+        print_help()
+        sys.exit(2)
 
     command = argv[1]
 
-    if command == "init":
-        init_repo()
-
-    elif command == "add":
-        if len(argv) < 3:
-            print("Provide a filename")
+    # Handle help flags
+    if command in ("--help", "-h", "help"):
+        if len(argv) > 2:
+            print_help(argv[2])
         else:
+            print_help()
+        sys.exit(0)
+    
+    if command in ("--version", "-v", "version"):
+        print("SnapGit version 0.5.0")
+        sys.exit(0)
+
+    try:
+        if command == "init":
+            init_repo()
+
+        elif command == "add":
+            if len(argv) < 3:
+                print("Error: missing filename", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['add']['usage']}", file=sys.stderr)
+                sys.exit(2)
             add_file(argv[2])
 
-    elif command == "cat-file":
-        if len(argv) < 3:
-            print("Provide a hash")
-        else:
+        elif command == "cat-file":
+            if len(argv) < 3:
+                print("Error: missing hash", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['cat-file']['usage']}", file=sys.stderr)
+                sys.exit(2)
             read_object(argv[2])
 
-    elif command == "commit":
-        if len(argv) < 3:
-            print("Provide a commit message")
-        else:
+        elif command == "commit":
+            if len(argv) < 3:
+                print("Error: missing commit message", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['commit']['usage']}", file=sys.stderr)
+                sys.exit(2)
             create_commit(argv[2])
-    elif command == "checkout":
-        if len(argv) < 3:
-            print("Provide a name")
-        else:
+
+        elif command == "checkout":
+            if len(argv) < 3:
+                print("Error: missing branch or commit", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['checkout']['usage']}", file=sys.stderr)
+                sys.exit(2)
             checkout(argv[2])
-    elif command == "branch":
-        if len(argv) < 3:
-            print("Provide a branch name")
-        else:
+
+        elif command == "branch":
+            if len(argv) < 3:
+                print("Error: missing branch name", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['branch']['usage']}", file=sys.stderr)
+                sys.exit(2)
             create_branch(argv[2])
-    elif command == "merge":
-        if len(argv) < 3:
-            print("Provide branch name")
-        else:
-            try:
-                merge(argv[2])
-            except Exception as e:
-                print(f"Error: {e}")
-    elif command == "diff":
-        try:
-            if len(argv) == 3:
+
+        elif command == "merge":
+            if len(argv) < 3:
+                print("Error: missing branch name", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['merge']['usage']}", file=sys.stderr)
+                sys.exit(2)
+            merge(argv[2])
+
+        elif command == "diff":
+            if len(argv) == 2:
+                diff()
+            elif len(argv) == 3:
                 diff(argv[2])
             elif len(argv) == 4:
                 diff(argv[2], argv[3])
             else:
-                print("Usage: snapgit diff <commit1> [<commit2>]")
-        except Exception as e:
-            print(f"Error: {e}")
-    elif command == "status":
-        show_status()
-    elif command == "log":
-        log_commits()
-    elif command == "version":
-        print("SnapGit version 0.1.0")
-    else:
-        print("Unknown command")
+                print("Error: too many arguments", file=sys.stderr)
+                print(f"Usage: {COMMANDS_HELP['diff']['usage']}", file=sys.stderr)
+                sys.exit(2)
+
+        elif command == "status":
+            show_status()
+
+        elif command == "log":
+            log_commits()
+
+        else:
+            print(f"Error: unknown command '{command}'", file=sys.stderr)
+            print(f"Use 'snapgit --help' for usage information.", file=sys.stderr)
+            sys.exit(2)
+            
+        sys.exit(0)
+    
+    except KeyboardInterrupt:
+        print("\nAborted by user", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
