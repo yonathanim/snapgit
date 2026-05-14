@@ -100,6 +100,16 @@ def print_help(command=None):
         print(f"Unknown command: {command}")
         sys.exit(2)
 
+def require_argument(argv, command_name, argument_name):
+    """Validate required command arguments."""
+    if len(argv) < 3:
+        print(f"Error: missing {argument_name}", file=sys.stderr)
+        print(
+            f"Usage: {COMMANDS_HELP[command_name]['usage']}",
+            file=sys.stderr
+        )
+        sys.exit(2)
+
 
 def main(argv=None):
     if argv is None:
@@ -128,10 +138,7 @@ def main(argv=None):
             init_repo()
 
         elif command == "add":
-            if len(argv) < 3:
-                print("Error: missing filename", file=sys.stderr)
-                print(f"Usage: {COMMANDS_HELP['add']['usage']}", file=sys.stderr)
-                sys.exit(2)
+            require_argument(argv, "add", "filename")
             add_file(argv[2])
 
         elif command == "cat-file":
@@ -142,10 +149,7 @@ def main(argv=None):
             read_object(argv[2])
 
         elif command == "commit":
-            if len(argv) < 3:
-                print("Error: missing commit message", file=sys.stderr)
-                print(f"Usage: {COMMANDS_HELP['commit']['usage']}", file=sys.stderr)
-                sys.exit(2)
+            require_argument(argv, "commit", "commit message")
             create_commit(argv[2])
 
         elif command == "checkout":
@@ -200,3 +204,6 @@ def main(argv=None):
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+        
+if __name__ == "__main__":
+    main()
