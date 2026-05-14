@@ -70,21 +70,20 @@ Usage:
   snapgit --help
   snapgit --version
 
-Available commands:
-  init        Initialize a new repository
-  add         Stage files for commit
-  commit      Create a new commit
-  checkout    Switch branches or checkout commits
-  branch      Create or list branches
+Commands:
+  init        Initialize a repository
+  add         Stage files
+  commit      Create commit
+  checkout    Switch branches/commits
+  branch      Create branches
   merge       Merge branches
-  diff        Show differences between commits
-  log         Display commit history
-  status      Show working tree status
-  cat-file    Display object contents
-  
-For help on a command, run: snapgit <command> --help
-"""
+  diff        Show differences
+  log         Display history
+  status      Show repository status
+  cat-file    Inspect stored objects
 
+Run 'snapgit <command> --help' for detailed usage.
+"""
 
 def print_help(command=None):
     """Print help for a command or global help."""
