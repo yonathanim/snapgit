@@ -18,7 +18,7 @@ COMMANDS_HELP = {
     },
     "add": {
         "usage": "snapgit add <filename>",
-        "description": "Stage a file for commit.",
+        "description": "Stage files for commit.",
         "example": "snapgit add file.txt"
     },
     "commit": {
@@ -38,7 +38,7 @@ COMMANDS_HELP = {
     },
     "merge": {
         "usage": "snapgit merge <branch>",
-        "description": "Merge a branch into the current branch.",
+        "description": "Merge another branch into the current branch.",
         "example": "snapgit merge feature"
     },
     "diff": {
@@ -48,7 +48,7 @@ COMMANDS_HELP = {
     },
     "log": {
         "usage": "snapgit log",
-        "description": "Display commit history.",
+        "description": "Display repository history.",
         "example": "snapgit log"
     },
     "status": {
