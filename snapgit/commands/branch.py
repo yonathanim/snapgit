@@ -15,7 +15,7 @@ def create_branch(name: str) -> None:
     current_commit = RefManager.get_current_commit()
     
     if not current_commit:
-        print("No commits to branch from")
+        print("Error: no commits available to branch from")
         return
     
     try:
@@ -64,11 +64,11 @@ def merge_branch(name: str) -> None:
     current_commit = RefManager.get_current_commit()
     
     if not branch_commit:
-        print(f"Branch '{name}' not found")
+        print(f"Error: branch '{name}' does not exist")
         return
     
     if branch_commit == current_commit:
-        print("Already up to date")
+        print("Error: branch is already up to date")
         return
     
     print(f"Merge of '{name}' (Phase 3 placeholder)")

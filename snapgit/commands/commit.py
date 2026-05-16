@@ -27,7 +27,7 @@ def create_commit(message: str, author: str = "SnapGit User") -> None:
     index_entries = read_index()
     
     if not index_entries:
-        print("Nothing to commit.")
+        print("Error: nothing staged for commit")
         return
     
     # Get current commit (if any)
