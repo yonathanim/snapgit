@@ -155,9 +155,16 @@ class CommitGraph:
             
             branch_str = f" ({', '.join(branches)})" if branches else ""
             
-            line = f"{hash_short}{branch_str} {node.author} {node.message}"
-            output.append(line)
-        
+            output.append(f"commit {node.hash}{branch_str}")
+            output.append(f"Author: {node.author}")
+
+            if hasattr(node, "date"):
+                output.append(f"Date: {node.date}")
+
+            output.append("")
+            output.append(f"    {node.message}")
+            output.append("")
+                    
         return "\n".join(output)
     
     @staticmethod
