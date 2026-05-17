@@ -7,6 +7,7 @@ from .commands.branch import create_branch
 from .commands.merge import merge
 from .commands.diff import diff
 from .utils import read_object, show_status, log_commits
+from .commands.verify import verify_repository
 
 
 # Command help text
@@ -61,6 +62,11 @@ COMMANDS_HELP = {
         "description": "Display object contents by hash.",
         "example": "snapgit cat-file abc123def456..."
     },
+    "verify": {
+        "usage": "snapgit verify",
+        "description": "Validate repository structure and integrity.",
+        "example": "snapgit verify"
+    }
 }
 
 GLOBAL_HELP = """SnapGit - A Git-like Version Control System
@@ -191,6 +197,8 @@ def main(argv=None):
         elif command == "log":
             log_commits()
 
+        elif command == "verify":
+            verify_repository()
         else:
             print(f"Error: unknown command '{command}'", file=sys.stderr)
             print(f"Use 'snapgit --help' for usage information.", file=sys.stderr)
